@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Applause Test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <!-- css -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/bootstrap-multiselect.css" type="text/css" />
+    <!-- js -->
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="./js/bootstrap-multiselect.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <div class="jumbotron">
+            <h1>Applause Test</h1>
+            <h3>Find most experienced tester.</h3>
+            <hr>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"><strong>Search Criteria:</strong></h3>
+                    </div>
+                    <div class="panel-body">
+                        <div class="container">
+                            <div class="row">
+                                    <select id="select-country" multiple="multiple">
+                                        <option value="country01">country01</option>
+                                        <option value="country02">country02</option>
+                                        <option value="country03">country03</option>
+                                        <option value="country04">country04</option>
+                                    </select>
+                                    <select id="select-device" multiple="multiple">
+                                        <option value="device01">device01</option>
+                                        <option value="device02">device02</option>
+                                        <option value="device03">device03</option>
+                                        <option value="device04">device04</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-primary btn-md" id="search-btn"><span class="glyphicon glyphicon-search"></span> Search</button>            
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title"><strong>Testers</strong></h3>
+                    </div>
+                    <div class="panel-body">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Country</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th scope="row">1</th>
+                                    <td>Example Name</td>
+                                    <td>Example Country</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('#select-country').multiselect({
+                buttonWidth: '200px',
+                includeSelectAllOption: true,
+                selectAllValue: 'select-all-country',
+                onSelectAll: function() {
+                    // pass options
+                    console.log('select all country triggered.');
+                },
+                onDeselectAll: function() {
+                    //pass options
+                    console.log('select all country stopped.')
+                }
+            });
+            $('#select-device').multiselect({
+                buttonWidth: '200px',
+                includeSelectAllOption: true,
+                selectAllValue: 'select-all-device',
+                onSelectAll: function() {
+                    // pass options
+                    console.log('select all device triggered.');
+                },
+                onDeselectAll: function() {
+                    //pass options
+                    console.log('select all device stopped.')
+                }
+            });
+        });
+
+/*
+
+        $("#search-btn").on("click", function () {
+            var searchedCharacter = $("#character-search").val().trim();
+
+            searchedCharacter = searchedCharacter.replace(/\s+/g, "").toLowerCase();
+
+            $.get("/api/" + searchedCharacter, function (data) {
+                console.log(data);
+                if (data) {
+                    $("#stats").show();
+                    $("#name").text(data.name);
+                    $("#role").text(data.role);
+                    $("#age").text(data.age);
+                    $("#force-points").text(data.forcePoints);
+                } else {
+                    $("#name").text(
+                        "The force is not strong with this one. Your character was not found.");
+                    $("#stats").hide();
+                }
+            });
+        });
+
+*/
+    </script>
+</body>
+
+</html>
