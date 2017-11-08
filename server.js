@@ -10,9 +10,22 @@ var glob = require("glob");
 var app = express();
 var PORT = process.env.PORT || 3000;
 
+// instantiate global vars
+var testers_data = []; // global arr, has obj.s for testers
+
 app.use(express.static(__dirname + '/public')); // serve static files
 app.use(function (req, res, next) {
-    
+
+    // declare new class, model for indv. tester
+    class Tester {
+        constructor(id, name, country, devices) {
+            this.id = id;
+            this.name = name;
+            this.country = country;
+            this.devices = devices;
+        };
+    };    
+
     // required csv files to parse
     var csvfiles_req = {
         bugs: 'csv/bugs.csv',
@@ -24,30 +37,38 @@ app.use(function (req, res, next) {
     // get list of csv files
     var csvfiles = glob.sync('csv/*.csv');
     
+    // now have list of csv files;
+    // csv files = ['bugs.csv',...,'testers.csv']
+
+    // scan csv files, construct each indv. tester
+        // first scan testers.csv
+            // for each row of testerId
+                // construct an indv. tester from Tester class w. prop. of id = current row (1,2,3,..,9)
+                    // prop. of name = current row from column firstName + lastName
+                    // prop. of country = current row from column country
+        // scan 
     for (i=0; i < csvfiles.length; i++) {
-        if (csvfiles[i] == csvfiles_req.bugs) {
-            console.log('bugs.csv found');
-        } else if (csvfiles[i] == csvfiles_req.devices) {
-            console.log('devices.csv found');
-        } else if (csvfiles[i] == csvfiles_req.tester_device) {
-            console.log('tester_device.csv found');
-        } else if (csvfiles[i] == csvfiles_req.testers) {
-            console.log('testers.csv found');
-            console.log('tester ids: /n');
+        if (csvfiles[i] == csvfiles_req.testers) {
+            console.log('testers.csv found \n tester ids: \n');
+
             csvParser().
             fromFile(csvfiles_req.testers)
             .on('json',(jsonObj)=>{
                 // this should output the column testerId's content
                 console.log(jsonObj.testerId);
-                // combine csv header row and csv line to a json object
-                // jsonObj.a ==> 1 or 4
             })
             .on('done',(error)=>{
                 console.log('end')
             })
+        } else if (csvfiles[i] == csvfiles_req.bugs) {
+            console.log('bugs.csv found');
+        } else if (csvfiles[i] == csvfiles_req.devices) {
+            console.log('devices.csv found');
+        } else if (csvfiles[i] == csvfiles_req.tester_device) {
+            console.log('tester_device.csv found');
         } else {
-            continue;
-        }
+            break;
+        };
     };
 
     //console.log('completed');
