@@ -5,7 +5,7 @@
   "repository": "git@github.com:roblovelett/applause_test.git",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "web": "node ./bin/www"
   },
   "author": "Rob Lovelett",
   "license": "ISC",
@@ -14,7 +14,6 @@
     "csvtojson": "^1.1.9",
     "express": "^4.16.2",
     "fast-csv": "^2.4.1",
-    "glob": "^7.1.2",
-    "mongoose": "^4.13.1"
+    "glob": "^7.1.2"
   }
 }

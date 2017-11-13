@@ -5,12 +5,15 @@ var bodyParser = require("body-parser");
 var path = require("path");
 var fs = require("fs");
 var glob = require("glob");
+var tester = require('./models/tester');
 
 // Express app setup
 var app = express();
 var PORT = process.env.PORT || 3000;
+var router = express.Router();
 
 // instantiate global vars
+/*
 var testers_data = []; // global arr, has obj.s for testers
 
 // parse csv files, send testers data
@@ -24,7 +27,7 @@ app.use(function (req, res, next) {
 
     res.send(json)
     console.log(res);
-
+*/
     // declare new class, model for indv. tester
     /*
     class Tester {
@@ -37,15 +40,15 @@ app.use(function (req, res, next) {
     };    
     */
     //next();
-});
+//});
 
+/*
 app.use(express.static(__dirname + '/public')); // serve static files
-// Basic route that sends the user first to the AJAX Page
-app.get("/", function(req, res) {
+app.get("/", function(req, res) { // Basic route that sends the user first to the AJAX Page
     console.log('request: /n' + req);
   res.sendFile(path.join(__dirname, "index.html"));
 });
-
+*/
 //, function );
 /*
 app.use(function csvParser (req, res, next) {
@@ -148,6 +151,7 @@ app.use(function csvParser (req, res, next) {
 });*/
 
 // Express app data parsing setup
+/*
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.text());
@@ -225,3 +229,4 @@ app.post("/api/new", function(req, res) {
 app.listen(PORT, function() {
   console.log("App listening on PORT " + PORT);
 });
+*/
