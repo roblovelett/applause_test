@@ -13,10 +13,20 @@ var PORT = process.env.PORT || 3000;
 // instantiate global vars
 var testers_data = []; // global arr, has obj.s for testers
 
-app.use(express.static(__dirname + '/public')); // serve static files
+// parse csv files, send testers data
 app.use(function (req, res, next) {
+    
+    console.log(req);
+    var json = {
+        lorem: 'ipsum',
+        test: 'test'
+    };
+
+    res.send(json)
+    console.log(res);
 
     // declare new class, model for indv. tester
+    /*
     class Tester {
         constructor(id, name, country, devices) {
             this.id = id;
@@ -25,20 +35,80 @@ app.use(function (req, res, next) {
             this.devices = devices;
         };
     };    
+    */
+    //next();
+});
+
+app.use(express.static(__dirname + '/public')); // serve static files
+// Basic route that sends the user first to the AJAX Page
+app.get("/", function(req, res) {
+    console.log('request: /n' + req);
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
+//, function );
+/*
+app.use(function csvParser (req, res, next) {
+
+});
+    // instantiate arrays for props. in each indv. tester obj.
+    /*
+    var ids = [];
+    var names = [];
+    var countries = [];
+    var devices = [];
+    */
+
+    // these are changing arrays as data is parsed, to be pushed 
+  /*
+    var parsed_ids = [];
+    var parsed_names = [];
+    var parsed_countries = [];
+    var parsed_devices = [];
 
     // required csv files to parse
-    var csvfiles_req = {
+    const csvfiles_req = {
+        testers: 'csv/testers.csv',
         bugs: 'csv/bugs.csv',
         devices: 'csv/devices.csv',
-        tester_device: 'csv/tester_device.csv',
-        testers: 'csv/testers.csv'
+        tester_device: 'csv/tester_device.csv'
     };
 
     // get list of csv files
     var csvfiles = glob.sync('csv/*.csv');
     
-    // now have list of csv files;
-    // csv files = ['bugs.csv',...,'testers.csv']
+    // arrays
+    var ids = function ids(parsed_ids){
+        return parsed_ids;
+    };
+
+    // now have list of csv files; csv files = ['bugs.csv',...,'testers.csv']
+    for (i=0; i < csvfiles.length; i++) {
+        if (csvfiles[i] == csvfiles_req.testers) {
+
+            console.log(' found csv/testers.csv \n ... \n getting ids. \n');
+            
+            // parse data, push to ids array 
+            csvParser().
+            fromFile(csvfiles_req.testers)
+            .on('json',(jsonObj)=>{
+                // for each id, push to ids array
+                parsed_ids.push(jsonObj.testerId);
+            })
+            .on('error',(err)=>{
+                console.log('error: ' + err)
+            })
+            .on('done',()=>{
+                console.log(parsed_ids);
+            });
+        } else {
+            continue;
+        };
+    };
+
+    console.log(ids);
+
+
 
     // scan csv files, construct each indv. tester
         // first scan testers.csv
@@ -47,10 +117,10 @@ app.use(function (req, res, next) {
                     // prop. of name = current row from column firstName + lastName
                     // prop. of country = current row from column country
         // scan 
+    
+    /*
     for (i=0; i < csvfiles.length; i++) {
         if (csvfiles[i] == csvfiles_req.testers) {
-            console.log('testers.csv found \n tester ids: \n');
-
             csvParser().
             fromFile(csvfiles_req.testers)
             .on('json',(jsonObj)=>{
@@ -72,9 +142,10 @@ app.use(function (req, res, next) {
     };
 
     //console.log('completed');
-    
+    */
+/*
     next()
-});
+});*/
 
 // Express app data parsing setup
 app.use(bodyParser.json());
@@ -109,10 +180,7 @@ var characters = [{
 // Routes
 // =============================================================
 
-// Basic route that sends the user first to the AJAX Page
-app.get("/", function(req, res) {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
+
 
 app.get("/add", function(req, res) {
   res.sendFile(path.join(__dirname, "add.html"));
