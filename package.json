@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "test for applause",
   "repository": "git@github.com:roblovelett/applause_test.git",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
     "web": "node ./bin/www"
   },

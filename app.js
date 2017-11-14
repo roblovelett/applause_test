@@ -3,9 +3,11 @@ var bodyParser = require('body-parser');
 //var mongoose = require('mongoose');
 var glob = require("glob");
 var csvParser = require('fast-csv');
+var path = require("path");
 var testers = require('./routes/testers'); //routes are defined here
 var fs = require('fs');
 //var db = require('./bin/db');
+//var csvParser = require("csvtojson"); // csv parser
 var app = express(); //Create the Express app
 
 // app setup
@@ -72,6 +74,7 @@ var getDevices = (stream, db) => {
                 for (i=0; i < db.length; i++) {                  
                     db[i].Devices = Object.assign({}, Devices);
                 };
+                console.log(db);
                 getBugCount(stream, db);
             });
         } else if (i+1 === csvfiles.length) {
@@ -84,7 +87,7 @@ var getDevices = (stream, db) => {
 
 var getBugCount = (stream, db) => {
     // match deviceId, Names, and bug count
-    // inject into db
+    // inject
 };
 
 /*
@@ -198,11 +201,12 @@ data[propertyName] = propertyValue;
 
 //connect to our database
 //Ideally you will obtain DB details from a config file
-/*
+
 var dbName = 'testerDB';
 var mongodb = 'mongodb://localhost:27017/' + dbName;
 
 mongoose.connect(mongodb);
+*/
 
 app.use(bodyParser.json()); //configure body-parser
 app.use(bodyParser.urlencoded());
@@ -214,7 +218,5 @@ app.get("/", function(req, res) { // Basic route that sends the user first to th
 });
 
 app.use('/api', testers); //This is our route middleware
-*/
-
 
 module.exports = app;
