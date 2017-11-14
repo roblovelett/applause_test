@@ -5,16 +5,11 @@ var glob = require("glob");
 var csvParser = require('fast-csv');
 var testers = require('./routes/testers'); //routes are defined here
 var fs = require('fs');
-var db = require('./libs/db');
-//var csvParser = require("csvtojson"); // csv parser
+//var db = require('./bin/db');
 var app = express(); //Create the Express app
 
 // app setup
 var PORT = process.env.PORT || 3000;
-
-
-// csv parser
-var csvfiles = glob.sync('csv/*.csv'); // get list of csv files
 
 // required csv files to parse
 const csvfiles_req = {
@@ -24,21 +19,86 @@ const csvfiles_req = {
     tester_device: 'csv/tester_device.csv'
 };
 
-var db = []; //db will be composed of indv. tester objs
+// csv parser
+const csvfiles = glob.sync('csv/*.csv'); // get list of csv files
+var db = [];
+//var stream = '';
 
 for(i=0; i < csvfiles.length; i++) {   
     if(csvfiles[i] === csvfiles_req.testers) {
-        console.log('tester.csv found');
-        // get tester data
-        var db;
-        break;
+        console.log('testers.csv found. \n Parsing... \n');
+        var stream = fs.createReadStream(csvfiles_req.testers);
+        csvParser.fromStream(stream, {headers: ["testerId","firstName","lastName", "Country",,]})
+        .on("data", (data) => {
+            db.push(data);
+        })
+        .on("end", () => {
+            db.shift(); // wish I didn't have to do this there's no way to omit the lastLogin column and delete the headers at same time
+            console.log('Done. \n')
+            getDevices(stream, db)
+        });
     } else if (i+1 === csvfiles.length) {
-        // cannot find required testers.csv
-        // error
+        console.log('Cannot find testers.csv. Required to create database. \n');
         break;
+    };
+    continue;
+};
+
+var getDevices = (stream, db) => {
+
+    var Devices = {};
+    var deviceId;
+    var deviceName;
+
+    for (i=0; i < csvfiles.length; i++) {
+        if (csvfiles[i] === csvfiles_req.devices) {
+            console.log('devices.csv found. \n Parsing... \n');
+            stream = fs.createReadStream(csvfiles_req.devices);
+            csvParser
+            .fromStream(stream, {headers: false})
+            .on("data", (data) => {
+                //get values from 
+                deviceName = data[1];
+                deviceId = data[0];
+
+                Devices[deviceId] = {
+                    name: deviceName,
+                    bugCount: 0 // init bug counter to 0 for each device 
+                };
+            })
+            .on("end", () => {
+                delete Devices.deviceId; // wish not have to do this but headers: false not working and idk why
+                console.log('Done. \n')
+                for (i=0; i < db.length; i++) {                  
+                    db[i].Devices = Object.assign({}, Devices);
+                };
+                getBugCount(stream, db);
+            });
+        } else if (i+1 === csvfiles.length) {
+            console.log('Cannot find devices.csv. Required to create database. \n');
+            break;
+        };
+        continue;
     };
 };
 
+var getBugCount = (stream, db) => {
+    // match deviceId, Names, and bug count
+    // inject into db
+};
+
+/*
+var data = {
+    'PropertyA': 1,
+    'PropertyB': 2,
+    'PropertyC': 3
+};
+var propertyName = "someProperty";
+var propertyValue = "someValue";
+Either:
+
+data[propertyName] = propertyValue;
+*/
 
 /*
     var stream = fs.createReadStream(csvfiles_req.testers);
