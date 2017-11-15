@@ -24,7 +24,6 @@ const csvfiles_req = {
 // csv parser
 const csvfiles = glob.sync('csv/*.csv'); // get list of csv files
 var db = [];
-//var stream = '';
 
 for(i=0; i < csvfiles.length; i++) {   
     if(csvfiles[i] === csvfiles_req.testers) {
@@ -37,12 +36,15 @@ for(i=0; i < csvfiles.length; i++) {
         .on("end", () => {
             db.shift(); // wish I didn't have to do this there's no way to omit the lastLogin column and delete the headers at same time
             console.log('Done. \n')
+            
+            //error
+            if (i+1 === csvfiles.length) {
+                console.log('Cannot find testers.csv. Required to create database. \n');        
+            };
+
             getDevices(stream, db)
         });
-    } else if (i+1 === csvfiles.length) {
-        console.log('Cannot find testers.csv. Required to create database. \n');
-        break;
-    };
+    }
     continue;
 };
 
@@ -62,7 +64,6 @@ var getDevices = (stream, db) => {
                 //get values from 
                 deviceName = data[1];
                 deviceId = data[0];
-
                 Devices[deviceId] = {
                     name: deviceName,
                     bugCount: 0 // init bug counter to 0 for each device 
@@ -73,21 +74,94 @@ var getDevices = (stream, db) => {
                 console.log('Done. \n')
                 for (i=0; i < db.length; i++) {                  
                     db[i].Devices = Object.assign({}, Devices);
+                    continue;
                 };
-                console.log(db);
+                
+                if (i+1 === csvfiles.length) {
+                    console.log('Cannot find devices.csv. Required to create database. \n');        
+                };
+
                 getBugCount(stream, db);
+            
             });
-        } else if (i+1 === csvfiles.length) {
-            console.log('Cannot find devices.csv. Required to create database. \n');
-            break;
-        };
-        continue;
+        };     
     };
 };
 
-var getBugCount = (stream, db) => {
-    // match deviceId, Names, and bug count
-    // inject
+var getBugCount = (stream, db, dbDevicesNum) => {
+    
+    var deviceId_db;
+    var testerId_db;
+    var deviceId_parsed;
+    var testerId_parsed;
+    var matchedTesterId;
+    var matchedTester;
+    var matchedDevice;
+    var devicesNum = getDevicesNum(db);
+    
+    for (i=0; i < csvfiles.length; i++) {
+        if (csvfiles[i] === csvfiles_req.bugs) {
+            console.log('bugs.csv found. \n Parsing... \n');
+            stream = fs.createReadStream(csvfiles_req.bugs);
+            csvParser
+            .fromStream(stream, {headers: [,"deviceId","testerId"]})
+            .on("data", (data) => {
+                testerId_parsed = data.testerId;
+                deviceId_parsed = data.deviceId;
+                for (i=0; i < db.length; i++) {
+                    testerId_db = db[i].testerId;
+                    if (testerId_db === testerId_parsed) {
+                        console.log('testerId_db match: ' + testerId_db + '\n');
+                        // seems testerId_db was string, conv. to # 
+                        // find proper num tester obj. in db array 
+                        // sub 1 since array starts 0
+                        matchedTester = db[Number(testerId_db) - 1];
+                        console.log(matchedTester);
+                        // get matched tester obj. in db
+                        //for (i=1; i = devicesNum; i++) {
+                            //console.log(matchedTester.Devices[i]);
+                            //if (matchedTester.testerIddeviceId_parsed)    
+                            //if (deviceId_parsed === matchedTester.Devices[i]) {
+                                //matchedDevice = matchedTester.Devices[i];
+                                //console.log('matched device: ' + matchedDevice);
+                                //console.log('matched: ')
+                            //}
+                            //if (deviceId_parsed === )
+                    };
+                        //for (i=0; i < testerId_db.Devices; )
+                    
+                        // get deviceId
+                            // if deviceId equals db[i].Devices[i]
+                        // if db[i].
+                    // get deviceId
+                    // got 1
+                    
+                };
+            })
+            .on("end", () => {
+                console.log('Done. \n')
+                if (i+1 === csvfiles.length) {
+                    console.log('Cannot find bugs.csv. Required to create database. \n');        
+                };
+
+                // export db
+            });        
+        };
+    };
+};
+
+// helper function
+var getDevicesNum = (db) => {
+    var counter;
+    for (i=0; i < db.length; i++){
+        if (i+1 === db.length) {
+            // count how many devices are assigned to each user
+            // need for final parsing
+            // since uniform, we'll do it on last user
+            var counter = Object.keys(db[i].Devices).length;
+        };
+    };
+    return counter;    
 };
 
 /*
