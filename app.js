@@ -1,12 +1,10 @@
 var express = require('express');
 var bodyParser = require('body-parser');
-var csvParser = require('fast-csv');
 var path = require("path");
 var testers = require('./routes/testers'); //routes are defined here
 var fs = require('fs');
 var glob = require('glob');
 var csvParser = require('fast-csv');
-//var db = require('./bin/db');
 var app = express(); //Create the Express app
 
 // required csv files to parse
@@ -19,8 +17,9 @@ const csvfiles_req = {
 
 // csv parser
 const csvfiles = glob.sync('csv/*.csv'); // get list of csv files
-var db = [];
+var db = []; // init db
 
+// parse testers.csv
 for(i=0; i < csvfiles.length; i++) {   
     if(csvfiles[i] === csvfiles_req.testers) {
         console.log('testers.csv found. Parsing...');
@@ -35,7 +34,7 @@ for(i=0; i < csvfiles.length; i++) {
             
             //error
             if (i+1 === csvfiles.length) {
-                console.log('Cannot find testers.csv. Required to create database.');        
+                throw new Error('Cannot find testers.csv. Required to create database.');        
             };
 
             getDevices(stream, db)
@@ -44,6 +43,7 @@ for(i=0; i < csvfiles.length; i++) {
     continue;
 };
 
+// parse devices.csv
 var getDevices = (stream, db) => {
 
     var Devices = {};
@@ -74,7 +74,7 @@ var getDevices = (stream, db) => {
                 };
                 
                 if (i+1 === csvfiles.length) {
-                    console.log('Cannot find devices.csv. Required to create database.');        
+                    throw new Error('Cannot find devices.csv. Required to create database.');        
                 };
 
                 getBugCount(stream, db);
@@ -84,6 +84,7 @@ var getDevices = (stream, db) => {
     };
 };
 
+//parse bugs.csv
 var getBugCount = (stream, db) => {
     
     var deviceId_db;
@@ -133,27 +134,42 @@ var getBugCount = (stream, db) => {
             })
             .on("end", () => {
                 if (i+1 === csvfiles.length) {
-                    console.log('Cannot find bugs.csv. Required to create database.');        
+                    throw new Error('Cannot find bugs.csv. Required to create database.');        
                 };
                 // export db
-                console.log(db);
+                startApp(db);
             });        
         };
-    };
+    };        
 };
 
-// app setup
-var PORT = process.env.PORT || 3000;
+// start app
+var startApp = (db) => {
 
-app.use(bodyParser.json()); //configure body-parser
-app.use(bodyParser.urlencoded());
-app.use(express.static(__dirname + '/public')); // serve static files
+    console.log(db);
 
-app.get("/", function(req, res) { // Basic route that sends the user first to the AJAX Page
-    console.log('request: /n' + req);
-  res.sendFile(path.join(__dirname, "index.html"));
-});
+    // app setup
+    var PORT = process.env.PORT || 3000;
+    
+    // Sets up the Express app to handle data parsing
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(bodyParser.text());
+    app.use(bodyParser.json({ type: "application/vnd.api+json" }));
+        
+    app.use(express.static(__dirname + '/public')); // serve static files
 
-app.use('/api', testers); //This is our route middleware
+    app.get("/", function(req, res) { // Basic route that sends the user first to the AJAX Page
+        console.log('request: /n' + req);
+    res.sendFile(path.join(__dirname, "index.html"));
+    });
 
-module.exports = app;
+    app.use('/api', testers); //This is our route middleware
+
+    // Starts the server to begin listening
+    // =============================================================
+    app.listen(PORT, function() {
+        console.log("App listening on PORT " + PORT);
+    });
+
+};
