@@ -93,20 +93,43 @@ var getBugCount = (stream, db) => {
     var matchedTesterId;
     var matchedTester;
     var matchedDevice;
-    var devicesNum = (db) => {
-        var counter;
-        
+    
+    const testersNum = db.length; // # of testers in db; need for api    
+    const devicesNum = (db) => {
         for (i=0; i < db.length; i++){
             if (i+1 === db.length) {
-                // count how many devices are assigned to each user
-                // need for final parsing
-                // since uniform, we'll do it on last user
+                // # of devices assigned each user
+                // need for final parsing, api
+                // since uniform, count devices of last user
                 var counter = Object.keys(db[i].Devices).length;
+                break;
             };
         };
-
         return counter;    
     };
+    const testers = (db) => {
+        var testers = []; // init array of testers
+        var tester;  
+        for (i=0; i < testersNum; i++) {
+            tester = db[i].firstName + db[i].lastName;
+            testers[i] = tester;
+        };
+        return testers;
+    };
+    console.log(testers);
+    
+    const devices = (db) => {
+        var devices = []; // init array of devices
+        var device;
+        for (i=0; i < devicesNum; i++) { // scan Devices, put in devices array
+            // db array starts @ 0; Devices props start @ 1;
+            device = db[testersNum - 1].Devices[i + 1].name;
+            device.trim(); // trim any spaces
+            devices[i] = device;
+        };
+        return devices;
+    };
+    console.log(devices);
 
     for (i=0; i < csvfiles.length; i++) {
         if (csvfiles[i] === csvfiles_req.bugs) {
@@ -128,32 +151,95 @@ var getBugCount = (stream, db) => {
                         matchedDevice = matchedTester.Devices[deviceId_parsed];
                         matchedDevice.bugCount ++;
                     };
-                    //finish updating bugCount for matchedTester
                 };
             })
             .on("end", () => {
                 if (i+1 === csvfiles.length) {
                     console.log('Cannot find bugs.csv. Required to create database.');        
                 };
-                // export db
-                console.log(db);
+
+                console.log('Done. \nDatabase created.');
+
+                // app setup
+                app.use(bodyParser.json({ extended: true }));
+                app.use(bodyParser.urlencoded({ extended: true }));
+                app.use(bodyParser.text({ extended: true }));
+                app.use(bodyParser.json({ type: "application/vnd.api+json", extended: true }));
+                
+                // serve static files (public/*; css,js,etc)
+                app.use(express.static(__dirname + '/public')); 
+                app.set('port', process.env.PORT || 8000); //set port
+
+                var server = app.listen(app.get('port'), function() {
+                    console.log('App listening on port ' + server.address().port);
+                });
+
+                // routes
+                app.get("/", function(req, res) { // Basic route that sends the user first to the AJAX Page
+                    console.log('request: /n' + req);
+                    res.sendFile(path.join(__dirname, "index.html"));
+                });
+
+                // Find most experienced Tester
+                app.get('/api/countries=:country?/devices=:device?', (req, res) => {
+                    
+                    // db
+                    // testersNum
+                    // devicesNum
+                    // db_res
+                    
+                    var testers = {
+                        "countries": req.params.country,
+                        "devices": req.params.device
+                    };
+
+                    for (i=0; i < testersNum; i++) {
+                        if (testers.countries && testers.devices) {
+                            if (testers.countries === 'all' && testers.devices === 'all') {
+                                res.json('all/all');        
+                            } else if (testers.countries === 'all' && testers.devices != 'all') {
+                                // if device = 
+                                res.json('all/*');
+                            } else if (testers.countries != 'all' && testers.devices === 'all') {
+                                res.json('*/all');
+                            }
+                        } else {
+                            res.json(false);
+                        };
+
+
+
+                        res.json(characters[i]);
+                        return;
+                    };
+                });
+
+                // Search for Specific Character (or all characters) - provides JSON
+                /*
+                app.get("/api/:characters?", function(req, res) {
+                    var chosen = req.params.characters;
+                
+                    if (chosen) {
+                        console.log(chosen);
+                
+                        for (var i = 0; i < characters.length; i++) {
+                            if (chosen === characters[i].routeName) {
+                            res.json(characters[i]);
+                            return;
+                            }
+                        }
+                
+                    res.json(false);
+                    }
+                    else {
+                    res.json(characters);
+                    }
+                });
+                */
+
+                module.exports = app;
+                
             });        
         };
     };
 };
-
-// app setup
-var PORT = process.env.PORT || 3000;
-
-app.use(bodyParser.json()); //configure body-parser
-app.use(bodyParser.urlencoded());
-app.use(express.static(__dirname + '/public')); // serve static files
-
-app.get("/", function(req, res) { // Basic route that sends the user first to the AJAX Page
-    console.log('request: /n' + req);
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-app.use('/api', testers); //This is our route middleware
-
-module.exports = app;
