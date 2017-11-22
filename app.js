@@ -1,12 +1,10 @@
 var express = require('express');
 var bodyParser = require('body-parser');
-var csvParser = require('fast-csv');
 var path = require("path");
 var testers = require('./routes/testers'); //routes are defined here
 var fs = require('fs');
 var glob = require('glob');
 var csvParser = require('fast-csv');
-//var db = require('./bin/db');
 var app = express(); //Create the Express app
 
 // required csv files to parse
@@ -19,8 +17,9 @@ const csvfiles_req = {
 
 // csv parser
 const csvfiles = glob.sync('csv/*.csv'); // get list of csv files
-var db = [];
+var db = []; // init db
 
+// parse testers.csv
 for(i=0; i < csvfiles.length; i++) {   
     if(csvfiles[i] === csvfiles_req.testers) {
         console.log('testers.csv found. Parsing...');
@@ -35,7 +34,7 @@ for(i=0; i < csvfiles.length; i++) {
             
             //error
             if (i+1 === csvfiles.length) {
-                console.log('Cannot find testers.csv. Required to create database.');        
+                throw new Error('Cannot find testers.csv. Required to create database.');        
             };
 
             getDevices(stream, db)
@@ -44,6 +43,7 @@ for(i=0; i < csvfiles.length; i++) {
     continue;
 };
 
+// parse devices.csv
 var getDevices = (stream, db) => {
 
     var Devices = {};
@@ -74,7 +74,7 @@ var getDevices = (stream, db) => {
                 };
                 
                 if (i+1 === csvfiles.length) {
-                    console.log('Cannot find devices.csv. Required to create database.');        
+                    throw new Error('Cannot find devices.csv. Required to create database.');        
                 };
 
                 getBugCount(stream, db);
@@ -84,6 +84,7 @@ var getDevices = (stream, db) => {
     };
 };
 
+//parse bugs.csv
 var getBugCount = (stream, db) => {
     
     var deviceId_db;
@@ -155,7 +156,7 @@ var getBugCount = (stream, db) => {
             })
             .on("end", () => {
                 if (i+1 === csvfiles.length) {
-                    console.log('Cannot find bugs.csv. Required to create database.');        
+                    throw new Error('Cannot find bugs.csv. Required to create database.');        
                 };
 
                 console.log('Done. \nDatabase created.');
