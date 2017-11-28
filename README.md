@@ -2,7 +2,7 @@ To run Locally:
 
 git clone git@github.com:roblovelett/applause_test.git
 npm i
-npm run web
+node app
 http://localhost:8000
 
 Reference:
