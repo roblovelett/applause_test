@@ -60,6 +60,7 @@ var getDevices = (stream, db) => {
             .on("data", (data) => {
                 //get values from 
                 deviceName = data[1];
+                deviceName = deviceName.replace(/\s+/g, ''); // trim whitespace
                 deviceId = data[0];
                 Devices[deviceId] = {
                     name: deviceName,
@@ -70,7 +71,7 @@ var getDevices = (stream, db) => {
                 delete Devices.deviceId; // wish not have to do this but headers: false not working and idk why
                 console.log('Done.')
                 for (i=0; i < db.length; i++) {                  
-                    db[i].Devices = Object.assign({}, Devices);
+                    db[i].Devices = JSON.parse(JSON.stringify(Devices)); // Deep Clone
                     continue;
                 };
                 
@@ -156,16 +157,16 @@ var getBugCount = (stream, db) => {
                 if (i+1 === csvfiles.length) {
                     throw new Error('Cannot find bugs.csv. Required to create database.');        
                 };
-          
-                console.log(db[0].Devices);
-                console.log(db[1].Devices);
-                console.log(db[2].Devices);
-                console.log(db[3].Devices);
-                console.log(db[4].Devices);
-                console.log(db[5].Devices);
-                console.log(db[6].Devices);
-                console.log(db[7].Devices);
-                console.log(db[8].Devices);
+
+                var totalBugCount = 0; // total bug count per tester; init 0
+
+                for (t=0; t < testersNum; t++) { // search thru testers
+                    for (d=1; d <= devicesNum; d++) { // search thru each testers devices
+                        totalBugCount = totalBugCount + db[t].Devices[d].bugCount;
+                    };
+                    db[t].totalBugCount = totalBugCount; // set totalBugCount for each tester
+                    totalBugCount = 0;
+                };
                 
                 // routes setup
                 app.get('/', (req, res) => {
@@ -178,44 +179,98 @@ var getBugCount = (stream, db) => {
                 });
                 
                 app.get('/api/countries/:countries_req/devices/:devices_req', (req, res) => {
-                    //res.json(req.params);
-
-                    var testers_res = db; // clone init. db into testers response obj                     
-                    var countries_req = req.params.countries_req; // requested countries in api
-                    var devices_req = req.params.devices_req; // requested devices in api
-                
-                    /*
-                    console.log('Done. Database created.');
-                    console.log('testersNum: ' + testersNum);
-                    console.log('devicesNum: ' + devicesNum);
-                    console.log('testers: ' + testers);
-                    console.log('devices: ' + devices);
-                    */
+                    
+                    var countries_req = req.params.countries_req; // req. countries in api
+                    var devices_req = req.params.devices_req; // req. devices in api
+                    var db_res = []; // data sorted from orig. db, put in db res. obj, conditional
+                    var valid = false; // bool checks api string valid
                     
                     for (i=0; i < testersNum; i++) {
                         if (countries_req && devices_req) {
                             if (countries_req === 'all' && devices_req === 'all') {
-                                res.json(testers_res);        
-                            } else if (testers.countries === 'all' && testers.devices != 'all') {
-                                res.json('all/*');
-                            } else if (testers.countries != 'all' && testers.devices === 'all') {
-                                res.json('*/all');
-                            }
-                        } else {
-                            res.json(false);
+                                db_res = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
+                                res.json(db_res);
+                            } else if (countries_req === 'all' && devices_req != 'all') {
+                                devices_req = _.split(devices_req, '&'); // parse devices_req api string, rem. &s
+                                for (r=0; r < devices_req.length; r++) {
+                                    for (d=0; d < devicesNum; d++) {
+                                        if (devices_req[r] === devices[d]) {
+                                            valid = true;
+                                            break;
+                                        };
+                                    };
+                                    if (r = devices_req.length) {
+                                        break;
+                                    } else {
+                                        valid = false; // reset validation                                    
+                                    };
+                                };
+                                
+                                if (!valid) {
+                                    res.send('Error: Invalid devices.');
+                                } else if (valid) {
+                                    db_res = db;
+                                    var devices_req_num = devices_req.length; // # of devices req. in api
+                                    
+                                    //iPhone4,iPhone4S,iPhone5,GalaxyS3,GalaxyS4,Nexus4,DroidRazor,DroidDNA,HTCOne,iPhone3
+                                    //res.send(db_res);
+
+                                    
+                                    var currentDeviceName;
+                                    var currentDeviceBugCount;
+                                    var untested_cntr = 0; // counter for tester missing req. device in api, conditional
+
+                                    for (i=0; i < db_res.length; i++) { // search each tester
+                                        for (d=1; d <= devicesNum; d++) { // search devices each tester
+                                            for (n=0; n < devices_req.length; n++) { // search devices req in devices each tester
+                                                currentDeviceName = db_res[i].Devices[d].name; // get current device name
+                                                /*
+                                                |
+                                                |
+                                                |
+                                                |
+                                                |
+                                                |
+                                                |
+                                                |
+                                                |
+                                                |
+                                                |
+                                                V
+                                                */
+                                                // if current device name != devices req
+                                                    // set bugCount to 0 
+                                                    // (needed to update total bugCount considering devices req)
+                                            };
+                                        };
+                                        //if (db_res[i].Devices[d].name)
+                                    };
+                                        // search devices
+                                            // if missing all requested devices, delete tester
+                                                // update testersNum
+                                            // remove unreq. devices each tester
+                                                // update bug count each tester
+                                    
+                                    // sort testers by bugCount desc. order
+
+                                    /*
+                                    for (i=0; i < db_res.length; i++) { // search db
+                                        for (d=0; d < devicesNum; d++) { // search devices
+                                            // find matching device for device req.
+                                            for (r=0; r < devices_req.length; r++) {
+                                                // if match & bugCount = 0
+                                                if (db_res[i].Devices[d].name === devices_req[r] && db_res[i].Devices[d].bugCount < 1 ) {
+                                                    untested_cntr++;
+                                                    db_res[i].untestedCount = untested_cntr;
+                                                };
+                                            };
+                                        };
+                                    };*/
+                                };  
+                            };
                         };
-                        //res.json(characters[i]);
-                        return;
                     };
                 });
-
-                // app setup
-                /*
-                app.use(bodyParser.json({ extended: true }));
-                app.use(bodyParser.urlencoded({ extended: true }));
-                app.use(bodyParser.text({ extended: true }));
-                app.use(bodyParser.json({ type: "application/vnd.api+json", extended: true }));
-                */
 
                 // serve static files (public/*; css,js,etc)
                 app.use(express.static(__dirname + '/public')); 
@@ -231,6 +286,41 @@ var getBugCount = (stream, db) => {
         };
     };
 };
+                                
+/*
+                                    var array = ['a', 'b', 'c', 'a', 'b', 'c']; 
+                                    _.pull(array, 'a', 'c');
+                                    console.log(array);
+                                    // => ['b', 'b']
+                                */
+
+                                //check devices_req valid
+                                //iPhone4,iPhone4S,iPhone5,GalaxyS3,GalaxyS4,Nexus4,DroidRazor,DroidDNA,HTCOne,iPhone3
+
+
+                                //res.json('all/*');
+                            /*
+                            } else if (countries_req != 'all' && devices_req === 'all') {
+                                res.json(*///'*/all');
+                            /*};
+                        } else {
+                            res.json(false);
+                        };*/
+                        //res.json(characters[i]);
+                        //return;
+                        //};
+                    
+                        //};
+                
+                        //});
+
+                // app setup
+                /*
+                app.use(bodyParser.json({ extended: true }));
+                app.use(bodyParser.urlencoded({ extended: true }));
+                app.use(bodyParser.text({ extended: true }));
+                app.use(bodyParser.json({ type: "application/vnd.api+json", extended: true }));
+                */
 
 // Find most experienced Tester
 /*
@@ -264,8 +354,7 @@ app.get('/api/countries/:countries_req/devices/:device_req'), (req, res) => {
                 app.get(/.*fly$/, function (req, res) {
                     res.send('/.*fly$/')
                 })
-                
-                
+                                
                 res.json('all/*');
             } else if (testers.countries != 'all' && testers.devices === 'all') {
                 res.json('*//*all');
