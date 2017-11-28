@@ -183,49 +183,58 @@ var getBugCount = (stream, db) => {
                     var countries_req = req.params.countries_req; // req. countries in api
                     var devices_req = req.params.devices_req; // req. devices in api
                     var devices_req_num; // # of devices req. in api
-                    var db_res = []; // data sorted from orig. db, put in db res. obj, conditional
+                    var current_device_req;
+                    var current_tester;
+                    var current_device_name;
+                    var db_res = db; // data sorted from orig. db, put in db res. obj, conditional
                     var valid_cntr = 0; // counter checks # of valid countries/devices
                     var valid = false; // bool checks countries/devices valid
 
-                    for (i=0; i < testersNum; i++) {
-                        if (countries_req && devices_req) {
-                            if (countries_req === 'all' && devices_req === 'all') {
-                                db_res = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
-                            } else if (countries_req === 'all' && devices_req != 'all') {
-                                devices_req = _.split(devices_req, '&'); // parse devices_req api string, rem. &s
-                                devices_req_num = devices_req.length; // get # of items in devices_req arr
-                                for (r=1; r <= devices_req_num; r++) {
-                                    for (d=1; d <= devicesNum; d++) {
-                                        if (devices[d] === devices_req[r]) {
-                                            valid_cntr++;
+                    if (countries_req && devices_req) {
+                        if (countries_req === 'all' && devices_req === 'all') {
+                            db_res = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
+                        } else if (countries_req === 'all' && devices_req != 'all') {
+                            devices_req = _.split(devices_req, '&'); // parse devices_req api string, rem. &s
+                            devices_req_num = devices_req.length; // get # of items in devices_req arr
+                            for (r=0; r < devices_req_num; r++) {
+                                for (d=0; d < devicesNum; d++) {
+                                    if (devices[d] === devices_req[r]) {
+                                        valid_cntr++;
+                                    };
+                                };
+                                if (valid_cntr === devices_req_num) {
+                                    valid = true;
+                                    break;
+                                };
+                            };
+
+                            console.log('devices_req: ' + devices_req + 'devices_req_num: ' + devices_req_num);
+                            console.log(db_res[0].Devices[1].name);
+                            console.log(devices_req[0]);
+
+                            if (valid) {    
+                                //res.send('devicesNum: ' +  devicesNum + 'devices_req: ' + devices_req + 'devices_req_num: ' + devices_req_num + 'valid_cntr: ' + valid_cntr + 'valid: ' + valid);
+                                
+                                for (r=0; r < devices_req_num; r++) {
+                                    current_device_req = devices_req[r];
+                                    for (t=0; t < testersNum; t++) {
+                                        current_tester = db_res[t];
+                                        for (d=1; d <= devicesNum; d++) {
+                                            current_device = current_tester.Devices[d];
+                                            if (current_device.name === current_device_req) {
+                                                //match
+                                            } else {
+                                                current_device.bugCount = 0;
+                                                db_res[t].Devices[d].bugCount = JSON.parse(JSON.stringify(current_device.bugCount));
+                                            };
                                         };
                                     };
-                                    if (valid_cntr === devices_req_num) {
-                                        valid = true;
-                                        break;
-                                    };
                                 };
 
-                                if (valid) {    
-                                    res.send('devicesNum: ' +  devicesNum + 'devices_req: ' + devices_req + 'devices_req_num: ' + devices_req_num + 'valid_cntr: ' + valid_cntr + 'valid: ' + valid);
-                                } else {
-                                    res.send('Error: Invalid devices.');
-                                };
+                                res.send(db_res);
 
-                                /*
-                                if (!valid) {
-                                    res.send('Error: Invalid devices.');
-                                } else if (valid) {
-                                    db_res = db;
-                                    res.send(devices_req);
-                                    var currentDeviceName;
-                                    //iPhone4,iPhone4S,iPhone5,GalaxyS3,GalaxyS4,Nexus4,DroidRazor,DroidDNA,HTCOne,iPhone3
-                            
-                                    for (n=0; n < devices_req_num; n++) {
-                                        //res.send(devices_req[n]);
-                                    };
-                                };
-                                */
+                            } else {
+                                //res.send('Error: Invalid devices.');
                             };
                         };
                     };
