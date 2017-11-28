@@ -182,91 +182,50 @@ var getBugCount = (stream, db) => {
                     
                     var countries_req = req.params.countries_req; // req. countries in api
                     var devices_req = req.params.devices_req; // req. devices in api
+                    var devices_req_num; // # of devices req. in api
                     var db_res = []; // data sorted from orig. db, put in db res. obj, conditional
-                    var valid = false; // bool checks api string valid
-                    
+                    var valid_cntr = 0; // counter checks # of valid countries/devices
+                    var valid = false; // bool checks countries/devices valid
+
                     for (i=0; i < testersNum; i++) {
                         if (countries_req && devices_req) {
                             if (countries_req === 'all' && devices_req === 'all') {
                                 db_res = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
-                                res.json(db_res);
                             } else if (countries_req === 'all' && devices_req != 'all') {
                                 devices_req = _.split(devices_req, '&'); // parse devices_req api string, rem. &s
-                                for (r=0; r < devices_req.length; r++) {
-                                    for (d=0; d < devicesNum; d++) {
-                                        if (devices_req[r] === devices[d]) {
-                                            valid = true;
-                                            break;
+                                devices_req_num = devices_req.length; // get # of items in devices_req arr
+                                for (r=1; r <= devices_req_num; r++) {
+                                    for (d=1; d <= devicesNum; d++) {
+                                        if (devices[d] === devices_req[r]) {
+                                            valid_cntr++;
                                         };
                                     };
-                                    if (r = devices_req.length) {
+                                    if (valid_cntr === devices_req_num) {
+                                        valid = true;
                                         break;
-                                    } else {
-                                        valid = false; // reset validation                                    
                                     };
                                 };
-                                
+
+                                if (valid) {    
+                                    res.send('devicesNum: ' +  devicesNum + 'devices_req: ' + devices_req + 'devices_req_num: ' + devices_req_num + 'valid_cntr: ' + valid_cntr + 'valid: ' + valid);
+                                } else {
+                                    res.send('Error: Invalid devices.');
+                                };
+
+                                /*
                                 if (!valid) {
                                     res.send('Error: Invalid devices.');
                                 } else if (valid) {
                                     db_res = db;
-                                    var devices_req_num = devices_req.length; // # of devices req. in api
-                                    
-                                    //iPhone4,iPhone4S,iPhone5,GalaxyS3,GalaxyS4,Nexus4,DroidRazor,DroidDNA,HTCOne,iPhone3
-                                    //res.send(db_res);
-
-                                    
+                                    res.send(devices_req);
                                     var currentDeviceName;
-                                    var currentDeviceBugCount;
-                                    var untested_cntr = 0; // counter for tester missing req. device in api, conditional
-
-                                    for (i=0; i < db_res.length; i++) { // search each tester
-                                        for (d=1; d <= devicesNum; d++) { // search devices each tester
-                                            for (n=0; n < devices_req.length; n++) { // search devices req in devices each tester
-                                                currentDeviceName = db_res[i].Devices[d].name; // get current device name
-                                                /*
-                                                |
-                                                |
-                                                |
-                                                |
-                                                |
-                                                |
-                                                |
-                                                |
-                                                |
-                                                |
-                                                |
-                                                V
-                                                */
-                                                // if current device name != devices req
-                                                    // set bugCount to 0 
-                                                    // (needed to update total bugCount considering devices req)
-                                            };
-                                        };
-                                        //if (db_res[i].Devices[d].name)
+                                    //iPhone4,iPhone4S,iPhone5,GalaxyS3,GalaxyS4,Nexus4,DroidRazor,DroidDNA,HTCOne,iPhone3
+                            
+                                    for (n=0; n < devices_req_num; n++) {
+                                        //res.send(devices_req[n]);
                                     };
-                                        // search devices
-                                            // if missing all requested devices, delete tester
-                                                // update testersNum
-                                            // remove unreq. devices each tester
-                                                // update bug count each tester
-                                    
-                                    // sort testers by bugCount desc. order
-
-                                    /*
-                                    for (i=0; i < db_res.length; i++) { // search db
-                                        for (d=0; d < devicesNum; d++) { // search devices
-                                            // find matching device for device req.
-                                            for (r=0; r < devices_req.length; r++) {
-                                                // if match & bugCount = 0
-                                                if (db_res[i].Devices[d].name === devices_req[r] && db_res[i].Devices[d].bugCount < 1 ) {
-                                                    untested_cntr++;
-                                                    db_res[i].untestedCount = untested_cntr;
-                                                };
-                                            };
-                                        };
-                                    };*/
-                                };  
+                                };
+                                */
                             };
                         };
                     };
@@ -286,7 +245,42 @@ var getBugCount = (stream, db) => {
         };
     };
 };
-                                
+                                    
+                                    /*
+                                    for (i=0; i < db_res.length; i++) { // search each tester
+                                        for (d=1; d <= devicesNum; d++) { // search devices each tester
+                                            for (n=0; n < devices_req.length; n++) { // search devices req in devices each tester
+                                                res.send(devices_req[n]);
+                                                currentDeviceName = db_res[i].Devices[d].name; // get current device name
+                                                if (currentDeviceName != devices_req[n]) {
+                                                    // (needed to update total bugCount considering devices req)
+                                                    db_res[i].Devices[d].bugCount = 0;
+                                                };  
+                                            };
+                                        };
+                                    };
+                                    */
+
+                                    // sort testers by bugCount desc. order
+
+                                    /*
+                                    for (i=0; i < db_res.length; i++) { // search db
+                                        for (d=0; d < devicesNum; d++) { // search devices
+                                            // find matching device for device req.
+                                            for (r=0; r < devices_req.length; r++) {
+                                                // if match & bugCount = 0
+                                                if (db_res[i].Devices[d].name === devices_req[r] && db_res[i].Devices[d].bugCount < 1 ) {
+                                                    untested_cntr++;
+                                                    db_res[i].untestedCount = untested_cntr;
+                                                };
+                                            };
+                                        };
+                                    };*/
+                                //};  
+                            //};
+                        //};
+                    //};
+                //});           
 /*
                                     var array = ['a', 'b', 'c', 'a', 'b', 'c']; 
                                     _.pull(array, 'a', 'c');
