@@ -222,10 +222,10 @@ var getBugCount = (stream, db) => {
                                         for (d=1; d <= devicesNum; d++) {
                                             current_device = current_tester.Devices[d];
                                             if (current_device.name === current_device_req) {
-                                                //match
+                                                // match
+                                                // don't touch matching device bugCount!
                                             } else {
-                                                current_device.bugCount = 0;
-                                                db_res[t].Devices[d].bugCount = JSON.parse(JSON.stringify(current_device.bugCount));
+                                                db_res[t].Devices[d].bugCount = 0;
                                             };
                                         };
                                     };
