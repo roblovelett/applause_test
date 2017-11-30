@@ -153,8 +153,6 @@ var getBugCount = (stream, db) => {
                     totalBugCount = 0;
                 };
 
-                console.log(countries);
-                
                 // routes setup
                 app.get('/', (req, res) => {
                     console.log('get http://localhost:8000');
@@ -215,6 +213,9 @@ var getBugCount = (stream, db) => {
                                 for (t=0; t < testersNum; t++) {
                                     current_tester = db_res[t];
                                     for (c=1; c <= countriesNum; c++) {
+                                        console.log(current_tester.Country); // outputs US GW JP ...
+                                        current_country = current_tester.Country;
+                                        console.log(current_country); // outputs null
                                         //current_country = getCurrentCountry(current_tester);
                                         //console.log(current_country);
                                         for (r=0; r < countries_req_num; r++) {
