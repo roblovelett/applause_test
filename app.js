@@ -89,25 +89,24 @@ var getBugCount = (stream, db) => {
     
     var deviceId_parsed;
     var testerId_parsed;
-    
-    const testersNum = db.length; // # of testers in db; need for api    
-    const devicesNum = getDevicesNum(db);
-    const testers = db.map(tester => tester.firstName + tester.lastName);
-    const countries = getCountries(db);
-    const devices = getDevices(db);
+    var testers = db.map(tester => tester.firstName + tester.lastName);
+    var testersNum = db.length; // # of testers in db; need for api
+    var devices = getDevices(db);
+    var devicesNum = devices.length; //getDevicesNum(db);
+    var countries = getCountries(db);
+    var countriesNum = countries.length;
     
     //helper functions
-    function getDevicesNum (db) {
-        for (i=0; i < db.length; i++){
-            if (i+1 === db.length) {
-                // # of devices assigned each user
-                // need for final parsing, api
-                // since uniform, count devices of last user
-                var counter = Object.keys(db[i].Devices).length;
-                break;
-            };
+    function getDevices (db) {
+        var devices = []; // init array of devices
+        var device;
+        for (i=0; i < devicesNum; i++) { // scan Devices, put in devices array
+            // db array starts @ 0; Devices props start @ 1;
+            device = db[testersNum - 1].Devices[i + 1].name;
+            device = device.replace(/\s/g, '');
+            devices[i] = device;
         };
-        return counter;    
+        return devices;
     };
     
     function getCountries(db) {
@@ -119,18 +118,6 @@ var getBugCount = (stream, db) => {
         };
         countries = _.uniq(countries); // using lodash to dedupe
         return countries;
-    };
-    
-    function getDevices (db) {
-        var devices = []; // init array of devices
-        var device;
-        for (i=0; i < devicesNum; i++) { // scan Devices, put in devices array
-            // db array starts @ 0; Devices props start @ 1;
-            device = db[testersNum - 1].Devices[i + 1].name;
-            device = device.replace(/\s/g, '');
-            devices[i] = device;
-        };
-        return devices;
     };
 
     for (i=0; i < csvfiles.length; i++) {
@@ -165,6 +152,8 @@ var getBugCount = (stream, db) => {
                     db[t].totalBugCount = totalBugCount; // set totalBugCount for each tester
                     totalBugCount = 0;
                 };
+
+                console.log(countries);
                 
                 // routes setup
                 app.get('/', (req, res) => {
@@ -183,7 +172,9 @@ var getBugCount = (stream, db) => {
                     var devices_req_num; // # of devices req. in api
                     var current_device_req;
                     var current_tester;
+                    var current_country;
                     var current_device;
+                    var country_checked = false;
                     var device_checked = false;
                     var db_res = db; // data sorted from orig. db, put in db res. obj, conditional
                     var valid_cntr = 0; // counter checks # of valid countries/devices
@@ -193,6 +184,56 @@ var getBugCount = (stream, db) => {
                         if (countries_req === 'all' && devices_req === 'all') {
                             db_res = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
                             res.send(db_res);
+                        } else if (countries_req != 'all' && devices_req === 'all') {
+                            if (countries_req.indexOf('&') > -1) {
+                                countries_req = _.split(devices_req, '&'); // parse countries_req api string, rem. &s    
+                            } else {
+                                var countries_req_arr = [];
+                                countries_req_arr.push(countries_req);
+                                countries_req = countries_req_arr;
+                                //countries_req.toArray(countries_req); //push(countries_req); // convert to arr single entry
+                            };
+
+                            if (countries_req) {
+                                countries_req_num = countries_req.length; // get # of items in countries_req arr
+                                for (r=0; r < countries_req_num; r++) {
+                                    for (c=0; c < countriesNum; c++) {
+                                        if (countries[c] === countries_req[r]) {
+                                            valid_cntr++;
+                                        };
+                                    };
+                                    if (valid_cntr === countries_req_num) {
+                                        valid = true;
+                                        break;
+                                    };
+                                };
+                            };
+
+                            if (valid) {    
+                                valid = false; // reset
+                                valid_cntr = 0; // reset
+                                for (t=0; t < testersNum; t++) {
+                                    current_tester = db_res[t];
+                                    for (c=1; c <= countriesNum; c++) {
+                                        //current_country = getCurrentCountry(current_tester);
+                                        //console.log(current_country);
+                                        for (r=0; r < countries_req_num; r++) {
+                                            country_checked = false;
+                                            if (current_country.name === countries_req[r]) {
+                                                country_checked = true;
+                                                break;
+                                            };
+                                        };
+                                        if (!country_checked) {
+                                            db_res.splice(t, 1);
+                                        };
+                                    };
+                                };
+                                res.send(db_res);
+                            } else {
+                                res.send('Error: Invalid countries.');
+                            };
+                            db_res = db; // reset
                         } else if (countries_req === 'all' && devices_req != 'all') {
                             devices_req = _.split(devices_req, '&'); // parse devices_req api string, rem. &s
                             devices_req_num = devices_req.length; // get # of items in devices_req arr
