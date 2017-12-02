@@ -167,6 +167,7 @@ var getBugCount = (stream, db) => {
                     
                     var countries_req = req.params.countries_req; // req. countries in api
                     var devices_req = req.params.devices_req; // req. devices in api
+                    var countries_req_num; // # of countries req. in api
                     var devices_req_num; // # of devices req. in api
                     var current_device_req;
                     var current_tester;
@@ -174,110 +175,175 @@ var getBugCount = (stream, db) => {
                     var current_device;
                     var country_checked = false;
                     var device_checked = false;
-                    var db_res = db; // data sorted from orig. db, put in db res. obj, conditional
-                    var valid_cntr = 0; // counter checks # of valid countries/devices
+                    var db_res = []; // data sorted from orig. db, put in db res. obj, conditional
                     var valid = false; // bool checks countries/devices valid
 
-                    if (countries_req && devices_req) {
-                        if (countries_req === 'all' && devices_req === 'all') {
-                            db_res = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
-                            res.send(db_res);
-                        } else if (countries_req != 'all' && devices_req === 'all') {
-                            if (countries_req.indexOf('&') > -1) {
-                                countries_req = _.split(devices_req, '&'); // parse countries_req api string, rem. &s    
-                            } else {
-                                var countries_req_arr = [];
-                                countries_req_arr.push(countries_req);
-                                countries_req = countries_req_arr;
-                                //countries_req.toArray(countries_req); //push(countries_req); // convert to arr single entry
-                            };
+                    switch (true) {
+                        case (countries_req && devices_req):
+                            countries_req = parseReq(countries_req);
+                            devices_req = parseReq(devices_req);
+                            valid = validateReqs(countries_req, devices_req);
+                        case (valid):
+                            valid = false; // reset
 
-                            if (countries_req) {
-                                countries_req_num = countries_req.length; // get # of items in countries_req arr
+                            break;
+                    };
+
+                    // default order; sort by totalBugCount
+                    // db_res = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
+                    
+                    /* ------------------------------------------------------------------------------------
+                        if (valid) {    
+                            valid = false; // reset
+                            valid_cntr = 0; // reset
+                            for (t=0; t < testersNum; t++) {
+                                current_tester = db[t];
                                 for (r=0; r < countries_req_num; r++) {
-                                    for (c=0; c < countriesNum; c++) {
-                                        if (countries[c] === countries_req[r]) {
-                                            valid_cntr++;
+                                    current_country = current_tester.Country;
+                                    if (current_country === countries_req[r]) {
+                                        db_res.push(current_tester);
+                                    };
+                                };
+                            };
+                            res.send(db_res);
+                        } else {
+                            res.send('Error: Invalid countries.');
+                        };
+                    } else if (countries_req === 'all' && devices_req != 'all') {
+                        devices_req = _.split(devices_req, '&'); // parse devices_req api string, rem. &s
+                        devices_req_num = devices_req.length; // get # of items in devices_req arr
+                        for (r=0; r < devices_req_num; r++) {
+                            for (d=0; d < devicesNum; d++) {
+                                if (devices[d] === devices_req[r]) {
+                                    valid_cntr++;
+                                };
+                            };
+                            if (valid_cntr === devices_req_num) {
+                                valid = true;
+                                break;
+                            };
+                        };
+
+                        if (valid) {    
+                            for (t=0; t < testersNum; t++) {
+                                current_tester = db_res[t];
+                                for (d=1; d <= devicesNum; d++) {
+                                    current_device = current_tester.Devices[d];
+                                    for (r=0; r < devices_req_num; r++) {
+                                        device_checked = false;
+                                        if (current_device.name === devices_req[r]) {
+                                            device_checked = true;
+                                            break;
                                         };
                                     };
-                                    if (valid_cntr === countries_req_num) {
-                                        valid = true;
+                                    if (!device_checked) {
+                                        db_res[t].totalBugCount = db_res[t].totalBugCount - current_device.bugCount;
+                                        db_res[t].Devices[d].bugCount = 0;
+                                    };
+                                };
+                            };
+                            db_res = _.orderBy(db, 'totalBugCount', 'desc');
+                            res.send(db_res);
+                        } else {
+                            res.send('Error: Invalid devices.');
+                        };
+                        db_res = db; // reset
+                    };
+                };
+
+                ----------------------------------------------------------------- */
+
+                    
+                    function parseReq (req) {
+                        var hasCountries = false; // bool to check if req has countries
+                        var hasDevices = false; // bool to check if req has devices
+                        var req_arr = []; // empty arr push api reqs to, return
+                        
+                        switch (true) {
+                            case checkHasCountries:
+                                for (c=0; c < countriesNum; c++) {
+                                    if (req.includes(countries[c])){
+                                        hasCountries = true;
                                         break;
                                     };
                                 };
-                            };
-
-                            if (valid) {    
-                                valid = false; // reset
-                                valid_cntr = 0; // reset
-                                for (t=0; t < testersNum; t++) {
-                                    current_tester = db_res[t];
-                                    for (c=1; c <= countriesNum; c++) {
-                                        console.log(current_tester.Country); // outputs US GW JP ...
-                                        current_country = current_tester.Country;
-                                        console.log(current_country); // outputs null
-                                        //current_country = getCurrentCountry(current_tester);
-                                        //console.log(current_country);
-                                        for (r=0; r < countries_req_num; r++) {
-                                            country_checked = false;
-                                            if (current_country.name === countries_req[r]) {
-                                                country_checked = true;
-                                                break;
-                                            };
-                                        };
-                                        if (!country_checked) {
-                                            db_res.splice(t, 1);
-                                        };
-                                    };
-                                };
-                                res.send(db_res);
-                            } else {
-                                res.send('Error: Invalid countries.');
-                            };
-                            db_res = db; // reset
-                        } else if (countries_req === 'all' && devices_req != 'all') {
-                            devices_req = _.split(devices_req, '&'); // parse devices_req api string, rem. &s
-                            devices_req_num = devices_req.length; // get # of items in devices_req arr
-                            for (r=0; r < devices_req_num; r++) {
+                            case checkHasDevices:
                                 for (d=0; d < devicesNum; d++) {
-                                    if (devices[d] === devices_req[r]) {
-                                        valid_cntr++;
+                                    if(req.includes(devices[d])){
+                                        hasDevices = true;
+                                        break;
                                     };
                                 };
-                                if (valid_cntr === devices_req_num) {
-                                    valid = true;
-                                    break;
+                            case (hasCountries || hasDevices):
+                                switch (true) {
+                                    case (req.includes('&')):
+                                        req_arr = _.split(req, '&'); // split req api string, rem. &s, store arr
+                                        break;    
+                                    case (req === 'all'):
+                                        req_arr = req;
+                                        break; 
+                                    default:
+                                        req_arr.push(req);
                                 };
-                            };
-
-                            if (valid) {    
-                                for (t=0; t < testersNum; t++) {
-                                    current_tester = db_res[t];
-                                    for (d=1; d <= devicesNum; d++) {
-                                        current_device = current_tester.Devices[d];
-                                        for (r=0; r < devices_req_num; r++) {
-                                            device_checked = false;
-                                            if (current_device.name === devices_req[r]) {
-                                                device_checked = true;
-                                                break;
-                                            };
-                                        };
-                                        if (!device_checked) {
-                                            db_res[t].totalBugCount = db_res[t].totalBugCount - current_device.bugCount;
-                                            db_res[t].Devices[d].bugCount = 0;
-                                        };
-                                    };
-                                };
-                                db_res = _.orderBy(db, 'totalBugCount', 'desc');
-                                res.send(db_res);
-                            } else {
-                                res.send('Error: Invalid devices.');
-                            };
-                            db_res = db; // reset
+                                break;
+                            default:
+                                res.send('Invalid Countries &/ Devices.')
                         };
+                        return req_arr;
+                    };
+
+                    function validateReqs (req_cntry, req_dev) {
+                        var valid_cntr = 0;
+                        var cntry_valid = false;
+                        var dev_valid = false;
+                        var all_valid = false;
+                        var validate_msg = '';
+
+                        switch (true) {
+                            case (hasCountries):
+                                hasCountries = false; // reset
+                                countries_req_num = req_cntry.length; // get # of items in countries_req arr
+                                for (r=0; r < countries_req_num; r++) {
+                                    for (c=0; c < countriesNum; c++) {
+                                        if (countries[c] === req_cntry[r]) {
+                                            valid_cntr++;
+                                        };
+                                    };
+                                    if (valid_cntr === countries_req_num || req_cntry === 'all') {
+                                        valid_cntr = 0;
+                                        cntry_valid = true;
+                                        break;
+                                    } else {
+                                        validate_msg = 'Invalid Country or Countries. '
+                                    };
+                                };
+                            case (hasDevices):
+                                hasDevices = false; // reset
+                                devices_req_num = req_dev.length; // get # of items in devices_req arr
+                                for (r=0; r < devices_req_num; r++) {
+                                    for (d=0; d < devicesNum; d++) {
+                                        if (devices[d] === req_dev[r]) {
+                                            valid_cntr++;
+                                        };
+                                    };
+                                    if (valid_cntr === devices_req_num || req_cntry === 'all') {
+                                        valid_cntr = 0;
+                                        dev_valid = true;
+                                        break;
+                                    } else {
+                                        validate_msg = validate_msg + 'Invalid Device(s).'
+                                    };
+                                };
+                            case (cntry_valid && dev_valid):
+                                all_valid = true;
+                                break;
+                            default:
+                                res.send(validate_msg); // error msg
+                        };
+                        return all_valid;
                     };
                 });
-
+                
                 // serve static files (public/*; css,js,etc)
                 app.use(express.static(__dirname + '/public')); 
                 app.set('port', process.env.PORT || 8000); //set port
