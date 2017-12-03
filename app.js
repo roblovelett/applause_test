@@ -167,16 +167,10 @@ var getBugCount = (stream, db) => {
                     
                     var countries_req = req.params.countries_req; // req. countries in api
                     var devices_req = req.params.devices_req; // req. devices in api
-                    var countries_req_num; // # of countries req. in api
-                    var devices_req_num; // # of devices req. in api
-                    var current_device_req;
-                    var current_tester;
-                    var current_country;
-                    var current_device;
-                    var country_checked = false;
-                    var device_checked = false;
                     var db_res = []; // data sorted from orig. db, put in db res. obj, conditional
                     var valid = false; // bool checks countries/devices valid
+                    var countries_req_num;
+                    var devices_req_num;
 
                     switch (true) {
                         case (countries_req && devices_req):
@@ -185,74 +179,15 @@ var getBugCount = (stream, db) => {
                             valid = validateReqs(countries_req, devices_req);
                         case (valid):
                             valid = false; // reset
-
+                            db_res = createDb(countries_req);
+                            res.send(db_res); // send db
                             break;
+                        default:
+                            res.send('Error. Cannot create Database.')
                     };
 
-                    // default order; sort by totalBugCount
-                    // db_res = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
-                    
-                    /* ------------------------------------------------------------------------------------
-                        if (valid) {    
-                            valid = false; // reset
-                            valid_cntr = 0; // reset
-                            for (t=0; t < testersNum; t++) {
-                                current_tester = db[t];
-                                for (r=0; r < countries_req_num; r++) {
-                                    current_country = current_tester.Country;
-                                    if (current_country === countries_req[r]) {
-                                        db_res.push(current_tester);
-                                    };
-                                };
-                            };
-                            res.send(db_res);
-                        } else {
-                            res.send('Error: Invalid countries.');
-                        };
-                    } else if (countries_req === 'all' && devices_req != 'all') {
-                        devices_req = _.split(devices_req, '&'); // parse devices_req api string, rem. &s
-                        devices_req_num = devices_req.length; // get # of items in devices_req arr
-                        for (r=0; r < devices_req_num; r++) {
-                            for (d=0; d < devicesNum; d++) {
-                                if (devices[d] === devices_req[r]) {
-                                    valid_cntr++;
-                                };
-                            };
-                            if (valid_cntr === devices_req_num) {
-                                valid = true;
-                                break;
-                            };
-                        };
-
-                        if (valid) {    
-                            for (t=0; t < testersNum; t++) {
-                                current_tester = db_res[t];
-                                for (d=1; d <= devicesNum; d++) {
-                                    current_device = current_tester.Devices[d];
-                                    for (r=0; r < devices_req_num; r++) {
-                                        device_checked = false;
-                                        if (current_device.name === devices_req[r]) {
-                                            device_checked = true;
-                                            break;
-                                        };
-                                    };
-                                    if (!device_checked) {
-                                        db_res[t].totalBugCount = db_res[t].totalBugCount - current_device.bugCount;
-                                        db_res[t].Devices[d].bugCount = 0;
-                                    };
-                                };
-                            };
-                            db_res = _.orderBy(db, 'totalBugCount', 'desc');
-                            res.send(db_res);
-                        } else {
-                            res.send('Error: Invalid devices.');
-                        };
-                        db_res = db; // reset
-                    };
-                };
-
-                ----------------------------------------------------------------- */
-
+                    console.log(valid);
+                    console.log(countries_req + devices_req);
                     
                     function parseReq (req) {
                         var hasCountries = false; // bool to check if req has countries
@@ -264,14 +199,12 @@ var getBugCount = (stream, db) => {
                                 for (c=0; c < countriesNum; c++) {
                                     if (req.includes(countries[c])){
                                         hasCountries = true;
-                                        break;
                                     };
                                 };
                             case checkHasDevices:
                                 for (d=0; d < devicesNum; d++) {
                                     if(req.includes(devices[d])){
                                         hasDevices = true;
-                                        break;
                                     };
                                 };
                             case (hasCountries || hasDevices):
@@ -298,7 +231,7 @@ var getBugCount = (stream, db) => {
                         var dev_valid = false;
                         var all_valid = false;
                         var validate_msg = '';
-
+                        
                         switch (true) {
                             case (hasCountries):
                                 hasCountries = false; // reset
@@ -342,6 +275,64 @@ var getBugCount = (stream, db) => {
                         };
                         return all_valid;
                     };
+
+                    function createDb(cntry_req, dev_req) {
+                        var db_res = [];
+                        var current_tester;
+                        var current_country;
+                        var current_device;
+                        var device_checked = false;
+                        var apiTestersNum = 0; // num of testers req based on api req; init
+
+                        switch (true) {
+                            case (cntry_req === 'all'):
+                                db_res =db;
+                            case create_db:
+                                for (t=0; t < testersNum; t++) {
+                                    current_tester = db[t];
+                                    for (r=0; r < countries_req_num; r++) {
+                                        current_country = current_tester.Country;
+                                        if (current_country === countries_req[r]) {
+                                            db_res.push(current_tester);
+                                        };
+                                    };
+                                };
+                                apiTestersNum = db_res.length; // get num of testers based on api req 
+                            case (dev_req === 'all'):
+                                db_res = sortDb(db_res);
+                                return db_res;
+                                break;
+                            case remove_unrequested_devices:        
+                                for (t=0; t < apiTestersNum; t++) {
+                                    current_tester = db_res[t];
+                                    for (d=1; d <= devicesNum; d++) {
+                                        current_device = current_tester.Devices[d];
+                                        for (r=0; r < devices_req_num; r++) {
+                                            device_checked = false;
+                                            if (current_device.name === devices_req[r]) {
+                                                device_checked = true;
+                                                break;
+                                            };
+                                        };
+                                        if (!device_checked) {
+                                            db_res[t].totalBugCount = db_res[t].totalBugCount - current_device.bugCount;
+                                            db_res[t].Devices[d].bugCount = 0;
+                                        };
+                                    };
+                                };
+                                db_res = sortDb(db_res);
+                                return db_res;
+                                break;
+                            default:
+                                res.send('Error. Unable to create Database.');
+                        };
+                    };
+
+                    function sortDb(db_res) {
+                        db_res = _.orderBy(db_res, 'totalBugCount', 'desc'); // sort by highest bugCount
+                        return db_res;
+                    };
+
                 });
                 
                 // serve static files (public/*; css,js,etc)
