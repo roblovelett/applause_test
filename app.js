@@ -194,104 +194,8 @@ var getBugCount = (stream, db) => {
                     };
 
                     // helper functions
-                    function validateReqs (req_cntry, req_dev) {
-                        /*
-                        var valid_cntr = 0;
-                        var cntry_valid = false;
-                        var dev_valid = false;
-                        var all_valid = false;
-                        var validate_msg = '';
-                        
-                        if (hasAllCountries) {
-                            cntry_valid = true;
-                        };
-
-                        if (hasAllDevices) {
-                            dev_valid = true;
-                        };
-                        
-                        if (hasCountries) {
-                            hasCountries = false; // reset
-                            countries_req_num = req_cntry.length; // get # of items in countries_req arr
-                            
-                            for (r=1; r <= countries_req_num; r++) {
-                                for (c=0; c < countriesNum; c++) {
-                                    if (countries[c] === req_cntry[r]) {
-                                        valid_cntr++;
-                                    };
-                                    if (valid_cntr === countries_req_num) {
-                                        valid_cntr = 0;
-                                        cntry_valid = true;
-                                        break;
-                                    };
-                                };     
-                            };
-                            */
-                        };
-                        
-                        if (hasDevices) {
-                            hasDevices = false; // reset
-                            devices_req_num = req_dev.length; // get # of items in devices_req arr
-                            for (r=1; r <= devices_req_num; r++) {
-                                for (d=0; d < devicesNum; d++) {
-                                    if (devices[d] === req_dev[r]) {
-                                        valid_cntr++;
-                                    };
-                                    if (valid_cntr === devices_req_num) {
-                                        valid_cntr = 0;
-                                        dev_valid = true;
-                                        break;
-                                    };
-                                };
-                            };
-                        };
-
-                        if (cntry_valid && dev_valid) {
-                            all_valid = true;
-                        };
-
-                        return all_valid;
-                    };
-
-                    function parseReq (req) {
-                        var req_arr = []; // empty arr push api reqs to, return
-
-                        for (c=0; c < countriesNum; c++) {
-                            if (req.includes(countries[c])){
-                                hasCountries = true;
-                                break;
-                            } else if (req === 'all'){
-                                hasAllCountries = true;
-                                break;
-                            };
-                        };
-                        
-                        for (d=0; d < devicesNum; d++) {
-                            if(req.includes(devices[d])){
-                                hasDevices = true;
-                                break;
-                            } else if (req === 'all'){
-                                hasAllDevices = true;
-                                break;
-                            };
-                        };
-                        
-                        if (hasCountries || hasDevices) {
-                            if (req.includes('&')) {
-                                req_arr = _.split(req, '&'); // split req api string, rem. &s, store arr
-                            } else {
-                                req_arr.push(req);
-                            };
-                        } else if (hasAllCountries || hasAllDevices) {
-                            req_arr = req;
-                        };
-
-                        return req_arr;
-                    };
-
-                    
-
                     function createDb(cntry_req, dev_req) {
+                        /*
                         var db_res = [];
                         var current_tester;
                         var current_country;
@@ -339,13 +243,117 @@ var getBugCount = (stream, db) => {
                         };
 
                         return db_res;
+                        */
                     };
 
                     function sortDb(db) {
+                        /*
                         db = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
                         return db;
+                        */
+                    };
+                    
+                    function parseReq (req) {
+                        var parse_arr = [];
+                        var req_arr = []; // empty arr push api reqs to, return
+                        
+                        for (c=0; c < countriesNum; c++) {
+                            if (req.includes(countries[c])){
+                                hasCountries = true;
+                                break;
+                            } else if (req === 'all'){
+                                hasAllCountries = true;
+                                break;
+                            };
+                        };
+                        
+                        for (d=0; d < devicesNum; d++) {
+                            if(req.includes(devices[d])){
+                                hasDevices = true;
+                                break;
+                            } else if (req === 'all'){
+                                hasAllDevices = true;
+                                break;
+                            };
+                        };
+                        
+                        if (hasCountries || hasDevices) {
+                            if (req.includes('&')) {
+                                parse_arr = _.split(req, '&'); // split req api string, rem. &s, store arr
+                            } else {
+                                parse_arr.push(req);
+                            };
+                            for (p=0; p < parse_arr.length; p++) {
+                                req_arr.push(parse_arr[p]);
+                            };
+                        } else if (hasAllCountries || hasAllDevices) {
+                            req_arr = req;
+                        };
+                        return req_arr;
                     };
 
+                    function validateReqs (req_cntry, req_dev) {
+                        var valid_cntr = 0;
+                        var cntry_valid = false;
+                        var dev_valid = false;
+                        var all_valid = false;
+                        var validate_msg = '';
+                        
+                        if (hasAllCountries) {
+                            cntry_valid = true;
+                        };
+
+                        if (hasCountries) {
+                            hasCountries = false; // reset
+                            var req_cntryNum = req_cntry.length; // get # of items in countries_req arr
+                            for (r=0; r < req_cntryNum; r++) {
+                                for (c=0; c < countriesNum; c++) {
+                                    if (countries[c] === req_cntry[r]) {
+                                        valid_cntr++;
+                                    };
+                                };
+                                if (valid_cntr === req_cntryNum) {
+                                    valid_cntr = 0; // reset
+                                    cntry_valid = true;
+                                };
+                            };
+                        };
+
+                        if (hasAllDevices) {
+                            dev_valid = true;
+                        };
+
+                        if (hasDevices) {
+                            hasDevices = false; // reset
+                            var req_devNum = req_dev.length; // get # req devices
+                            for (r=0; r < req_devNum; r++) {
+                                for (d=0; d < devicesNum; d++) {
+                                    if (devices[d] === req_dev[r]) {
+                                        valid_cntr++;
+                                    };
+                                };
+                                if (valid_cntr === req_devNum) {
+                                    valid_cntr = 0; // reset
+                                    dev_valid = true;
+                                };
+                            };
+                        };
+
+                        if (cntry_valid && dev_valid) {
+                            all_valid = true;
+                        } else {
+                            if (!cntry_valid && dev_valid) {
+                                validate_msg = 'Invalid Country/Countries.';
+                            } else if (cntry_valid && !dev_valid) {
+                                validate_msg = 'Invalid Device(s).';
+                            } else {
+                                validate_msg = 'Invalid Country/Countries. Invalid Device(s)';
+                            };
+                            res.send(validate_msg);
+                        };
+                        
+                        return all_valid;
+                    };
                 });
                 
                 // serve static files (public/*; css,js,etc)
