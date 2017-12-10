@@ -188,72 +188,14 @@ var getBugCount = (stream, db) => {
                     };
                     
                     if (valid) {
-                        valid = false; // reset
                         db_res = createDb(countries_req, devices_req);
                         res.send(db_res); // send db
+                        initVars(); // reset 
                     };
 
                     // helper functions
-                    function createDb(cntry_req, dev_req) {
-                        /*
-                        var db_res = [];
-                        var current_tester;
-                        var current_country;
-                        var current_device;
-                        var device_checked = false;
-                        var apiTestersNum = 0; // num of testers req based on api req; init
-
-                        if (cntry_req === 'all') {
-                            db_res = db;
-                        } else {
-                            for (t=0; t < testersNum; t++) {
-                                current_tester = db[t];
-                                for (r=0; r < countries_req_num; r++) {
-                                    current_country = current_tester.Country;
-                                    if (current_country === countries_req[r]) {
-                                        db_res.push(current_tester);
-                                    };
-                                };
-                            };
-                        };
-
-                        apiTestersNum = db_res.length; // get num of testers based on api req 
-                        
-                        if (dev_req === 'all') {
-                            db_res = sortDb(db_res);
-                        } else {
-                            for (t=0; t < apiTestersNum; t++) {
-                                current_tester = db_res[t];
-                                for (d=1; d <= devicesNum; d++) {
-                                    current_device = current_tester.Devices[d];
-                                    for (r=0; r < devices_req_num; r++) {
-                                        device_checked = false;
-                                        if (current_device.name === devices_req[r]) {
-                                            device_checked = true;
-                                            break;
-                                        };
-                                    };
-                                    if (!device_checked) {
-                                        db_res[t].totalBugCount = db_res[t].totalBugCount - current_device.bugCount;
-                                        db_res[t].Devices[d].bugCount = 0;
-                                    };
-                                };
-                            };
-                            db_res = sortDb(db_res);
-                        };
-
-                        return db_res;
-                        */
-                    };
-
-                    function sortDb(db) {
-                        /*
-                        db = _.orderBy(db, 'totalBugCount', 'desc'); // sort by highest bugCount
-                        return db;
-                        */
-                    };
-                    
                     function parseReq (req) {
+                      
                         var parse_arr = [];
                         var req_arr = []; // empty arr push api reqs to, return
                         
@@ -289,10 +231,13 @@ var getBugCount = (stream, db) => {
                         } else if (hasAllCountries || hasAllDevices) {
                             req_arr = req;
                         };
+
                         return req_arr;
+
                     };
 
                     function validateReqs (req_cntry, req_dev) {
+                      
                         var valid_cntr = 0;
                         var cntry_valid = false;
                         var dev_valid = false;
@@ -353,6 +298,100 @@ var getBugCount = (stream, db) => {
                         };
                         
                         return all_valid;
+
+                    };
+
+                    function createDb(cntry_req, dev_req) {
+                    
+                        var device = dev_req;
+                        var country = cntry_req;
+                        var db_res = [];
+                        var db_matchOnly_res = [];
+                        var current_tester;
+                        var current_tester_totalBugCount;
+                        var current_country;
+                        var current_device;
+                        var current_device_name;
+                        var current_device_bugCount;
+                        var device_checked = false;
+                        var apiTestersNum = 0; // num of testers req based on api req; init
+                        var delTestersNoBugCount = false;
+                        var testersNoBugCountNum = 0; // in case tester has country match, no device match
+
+                        countries_req_num = country.length;
+                        devices_req_num = device.length;
+
+                        // create db
+                        for (t=0; t < testersNum; t++) {
+                            current_tester = db[t];
+                            if (country === 'all') {
+                                db_res = db;
+                                break;
+                            } else {
+                                for (c=0; c < countries_req_num; c++) {
+                                    current_country = current_tester.Country;
+                                    if (current_country === countries_req[c]) {
+                                        db_res.push(current_tester);
+                                    };  
+                                };
+                            };
+                        };
+
+                        apiTestersNum = db_res.length;
+                        
+                        if (device != 'all') {
+                            for (t=0; t < apiTestersNum; t++) {
+                                current_tester = db_res[t];
+                                current_tester_totalBugCount = 0; // reset bugCount
+                                for (r=0; r < devices_req_num; r++) {    
+                                    for (d=1; d <= devicesNum; d++) {
+                                        current_device = current_tester.Devices[d];
+                                        current_device_name = current_device.name;
+                                        current_device_bugCount = current_device.bugCount;
+                                        if (device[r] === current_device_name) {
+                                            current_tester_totalBugCount += current_device_bugCount;
+                                        };
+                                    };
+                                };
+                                db_res[t].totalBugCount = current_tester_totalBugCount;
+                                if (db_res[t].totalBugCount === 0) {
+                                    testersNoBugCountNum ++;
+                                    delTestersNoBugCount = true;
+                                };
+                            };
+                        };
+                        
+                        if (delTestersNoBugCount) {
+                            console.log('orig db: ');
+                            console.log(db_res);
+                            var db_matchOnly_res = [];
+                            for (t=0; t < apiTestersNum; t++) {
+                                if (db_res[t].totalBugCount > 0) {
+                                    db_matchOnly_res.push(db_res[t]);
+                                };
+                            };
+                            console.log('db_matchOnly_res: ');
+                            console.log(db_matchOnly_res);
+                            db_res = db_matchOnly_res;
+                        };
+
+                        db_res = _.orderBy(db_res, 'totalBugCount', 'desc'); // sort by highest bugCount;
+                        
+                        return db_res;
+
+                    };
+
+                    function initVars(){
+                    
+                        hasCountries = false; // bool to check if req has countries
+                        hasDevices = false; // bool to check if req has devices
+                        hasAllCountries = false; // bool checks if countries_req = all
+                        hasAllDevices = false; // bool checks if devices_req = all
+                        db_res = []; // data sorted from orig. db, put in db res. obj, conditional
+                        valid = false; // bool checks countries/devices valid
+                        countries_req_num = 0;
+                        devices_req_num = 0;
+                        
                     };
                 });
                 

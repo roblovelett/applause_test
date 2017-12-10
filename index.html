@@ -32,19 +32,23 @@
                             <div class="row">
                                     <select id="select-country" multiple="multiple">
                                         
+                                        <!--
                                         <option value="country01">country01</option>
                                         <option value="country02">country02</option>
                                         <option value="country03">country03</option>
                                         <option value="country04">country04</option>
-                                        
+                                        -->
+
                                     </select>
                                     <select id="select-device" multiple="multiple">
-                                        
+                                    
+                                        <!--
                                         <option value="device01">device01</option>
                                         <option value="device02">device02</option>
                                         <option value="device03">device03</option>
                                         <option value="device04">device04</option>
-                                        
+                                        -->
+                                    
                                     </select>
                                     <button type="submit" class="btn btn-primary btn-md" id="search-btn"><span class="glyphicon glyphicon-search"></span> Search</button>            
                             </div>
@@ -62,13 +66,15 @@
                                     <th scope="col">#</th>
                                     <th scope="col">Name</th>
                                     <th scope="col">Country</th>
+                                    <th scope="col">Bug Count</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody >
                                 <tr>
                                     <th scope="row">1</th>
                                     <td>Example Name</td>
                                     <td>Example Country</td>
+                                    <td>Example Bug Count</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -80,42 +86,105 @@
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script type="text/javascript">
-        $(document).ready(function() {
+        $(document).ready(() => {
+            $.get("/api/countries/all/devices/all", (data) => {
+                if (data) { // if api call works
+                    
+                    var db = data;
+
+                    // get countries
+                    var countries = [];
+                    var currentTester;
+                    var testersNum = db.length;
+
+                    for (t=0; t < testersNum; t++) {
+                        currentTester = db[t];
+                        countries.push(currentTester.Country);
+                    };
+
+                    countries = $.unique(countries);
+                    var countriesNum = countries.length;
+
+                    // get devices
+                    // since uniform, get last
+                    var devicesInit = db[db.length - 1].Devices;
+                    var devicesNum = (Object.keys(devicesInit)).length;
+                    var testersNum = db.length;
+                    var devices = [];
+
+                    for (d=1; d <= devicesNum; d++) {
+                        devices.push(devicesInit[d].name);
+                    };
+
+                    for (c=0; c < countriesNum; c++) {
+                        $('#select-country').add("option").attr("value", countries[c]);
+                    };
+
+                    for (d=0; d < devicesNum; d++) {
+                        $('#select-devices').add("option").attr("value", devices[d]);
+                    };
+                    
+                    $('#select-country').multiselect({
+                        buttonWidth: '200px',
+                        includeSelectAllOption: true,
+                        selectAllValue: 'select-all-country',
+                        onSelectAll: () => {
+                            // pass options
+                            console.log('select all country triggered.');
+                        },
+                        onDeselectAll: () => {
+                            //pass options
+                            console.log('select all country stopped.')
+                        }
+                    });
+
+                    // fill select #select-country w/countries from db
+
+                    $('#select-device').multiselect({
+                        buttonWidth: '200px',
+                        includeSelectAllOption: true,
+                        selectAllValue: 'select-all-device',
+                        onSelectAll: () => {
+                            // pass options
+                            console.log('select all device triggered.');
+                        },
+                        onDeselectAll: () => {
+                            //pass options
+                            console.log('select all device stopped.')
+                        }
+                    });
+                } else {
+                    //
+                }
+            });
+
             
-            $('#select-country').multiselect({
-                buttonWidth: '200px',
-                includeSelectAllOption: true,
-                selectAllValue: 'select-all-country',
-                onSelectAll: function() {
-                    // pass options
-                    console.log('select all country triggered.');
-                },
-                onDeselectAll: function() {
-                    //pass options
-                    console.log('select all country stopped.')
-                }
-            });
-
-            // fill select #select-country w/countries from db
-
-            $('#select-device').multiselect({
-                buttonWidth: '200px',
-                includeSelectAllOption: true,
-                selectAllValue: 'select-all-device',
-                onSelectAll: function() {
-                    // pass options
-                    console.log('select all device triggered.');
-                },
-                onDeselectAll: function() {
-                    //pass options
-                    console.log('select all device stopped.')
-                }
-            });
 
             // fill select #select-devices w/devices from db
+            // start with api call country/all/devices/all
+            
 
+            // 1) Wait for the document to be ready.
+            // 2) Listen for the submission of the form.
+            // <button type="submit" class="btn btn-primary btn-md" id="search-btn"><span class="glyphicon glyphicon-search"></span> Search</button>
+            $('#search-btn').submit((event) => {
+
+                // 3) Prevent an entire page load (or reload).
+                event.preventDefault();
+
+                // 4) Grab the information from the form needed for the Ajax request.
+                var formAction = $(this).attr('action'); // e.g. '/somethings'
+                var formMethod = $(this).attr('method'); // e.g. 'post'
+                var formData   = $(this).serializeArray(); // grabs the form data and makes your params nicely structured!
+
+                // 5) Make the Ajax request, which will hit the 'create' action in the 'somethings' controller
+                $.ajax({
+                    url:  formAction,
+                    type: formMethod,
+                    data: formData
+                });
+            });
         });
-
 /*
 
         $("#search-btn").on("click", function () {
