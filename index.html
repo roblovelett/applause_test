@@ -8,6 +8,7 @@
     <!-- css -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <link rel="stylesheet" href="css/bootstrap-multiselect.css" type="text/css" />
+    <link rel="stylesheet" href="css/style.css" type="text/css" />
     <!-- js -->
     <script src="https://code.jquery.com/jquery.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
@@ -31,24 +32,10 @@
                         <div class="container">
                             <div class="row">
                                     <select id="select-country" multiple="multiple">
-                                        
-                                        <!--
-                                        <option value="country01">country01</option>
-                                        <option value="country02">country02</option>
-                                        <option value="country03">country03</option>
-                                        <option value="country04">country04</option>
-                                        -->
-
+                                        <!-- -->
                                     </select>
                                     <select id="select-device" multiple="multiple">
-                                    
-                                        <!--
-                                        <option value="device01">device01</option>
-                                        <option value="device02">device02</option>
-                                        <option value="device03">device03</option>
-                                        <option value="device04">device04</option>
-                                        -->
-                                    
+                                        <!-- -->
                                     </select>
                                     <button type="submit" class="btn btn-primary btn-md" id="search-btn"><span class="glyphicon glyphicon-search"></span> Search</button>            
                             </div>
@@ -59,7 +46,7 @@
                     <div class="panel-heading">
                         <h3 class="panel-title"><strong>Testers</strong></h3>
                     </div>
-                    <div class="panel-body">
+                    <div id="main-table" class="panel-body">
                         <table class="table">
                             <thead>
                                 <tr>
@@ -71,10 +58,12 @@
                             </thead>
                             <tbody >
                                 <tr>
+                                    <!--
                                     <th scope="row">1</th>
                                     <td>Example Name</td>
                                     <td>Example Country</td>
                                     <td>Example Bug Count</td>
+                                    -->
                                 </tr>
                             </tbody>
                         </table>
@@ -89,7 +78,7 @@
         $(document).ready(() => {
             $.get("/api/countries/all/devices/all", (data) => {
                 if (data) { // if api call works
-                    
+
                     var db = data;
 
                     // get countries
@@ -116,13 +105,26 @@
                         devices.push(devicesInit[d].name);
                     };
 
-                    for (c=0; c < countriesNum; c++) {
-                        $('#select-country').add("option").attr("value", countries[c]);
-                    };
+                    console.log(devices);
 
-                    for (d=0; d < devicesNum; d++) {
-                        $('#select-devices').add("option").attr("value", devices[d]);
-                    };
+                    // add options for ea. country
+                    $('#select-country').html(() => {
+                        var opts;
+                        for (c=0; c < countriesNum; c++) {
+                            opts += '<option value="' + countries[c] + '">' + countries[c] + '</option>';    
+                        };
+                        return opts;
+                    });
+                    
+                    $('#select-device').html(() => {
+                        var opts;
+                        for (d=0; d < devicesNum; d++) {
+                            opts += '<option value="' + devices[d] + '">' + devices[d] + '</option>';    
+                        };
+                        return opts;
+                    });
+
+                    var selectedAllCountries = false;
                     
                     $('#select-country').multiselect({
                         buttonWidth: '200px',
@@ -131,15 +133,18 @@
                         onSelectAll: () => {
                             // pass options
                             console.log('select all country triggered.');
+                            selectedAllCountries = true;
                         },
                         onDeselectAll: () => {
                             //pass options
-                            console.log('select all country stopped.')
+                            console.log('select all country stopped.');
+                            selectedAllCountries = false;
                         }
                     });
 
-                    // fill select #select-country w/countries from db
+                    var selectedAllDevices = false;
 
+                    // fill select #select-country w/countries from db
                     $('#select-device').multiselect({
                         buttonWidth: '200px',
                         includeSelectAllOption: true,
@@ -147,67 +152,56 @@
                         onSelectAll: () => {
                             // pass options
                             console.log('select all device triggered.');
+                            selectedAllDevices = true;
                         },
                         onDeselectAll: () => {
                             //pass options
-                            console.log('select all device stopped.')
+                            console.log('select all device stopped.');
+                            selectedAllDevices = true;
                         }
                     });
+
+                    $("#search-btn").on("click", () => {
+                        var searchedCountries;
+                        var searchedDevices;
+                        
+                        if (selectedAllCountries) {
+                            searchedCountries = 'all';
+                        } else {
+                            
+                        };
+
+                        if (selectedAllDevices) {
+                            searchedDevices = 'all';
+                        } else {
+                            
+                        };
+
+                        //var searchedCharacter = $("#character-search").val().trim();
+
+                        searchedCharacter = searchedCharacter.replace(/\s+/g, "").toLowerCase();
+
+                        $.get("/api/" + searchedCharacter, function (data) {
+                            console.log(data);
+                            if (data) {
+                                $("#stats").show();
+                                $("#name").text(data.name);
+                                $("#role").text(data.role);
+                                $("#age").text(data.age);
+                                $("#force-points").text(data.forcePoints);
+                            } else {
+                                $("#name").text(
+                                    "The force is not strong with this one. Your character was not found.");
+                                $("#stats").hide();
+                            }
+                        });
+                    });
+
                 } else {
                     //
-                }
-            });
-
-            
-
-            // fill select #select-devices w/devices from db
-            // start with api call country/all/devices/all
-            
-
-            // 1) Wait for the document to be ready.
-            // 2) Listen for the submission of the form.
-            // <button type="submit" class="btn btn-primary btn-md" id="search-btn"><span class="glyphicon glyphicon-search"></span> Search</button>
-            $('#search-btn').submit((event) => {
-
-                // 3) Prevent an entire page load (or reload).
-                event.preventDefault();
-
-                // 4) Grab the information from the form needed for the Ajax request.
-                var formAction = $(this).attr('action'); // e.g. '/somethings'
-                var formMethod = $(this).attr('method'); // e.g. 'post'
-                var formData   = $(this).serializeArray(); // grabs the form data and makes your params nicely structured!
-
-                // 5) Make the Ajax request, which will hit the 'create' action in the 'somethings' controller
-                $.ajax({
-                    url:  formAction,
-                    type: formMethod,
-                    data: formData
-                });
-            });
+                };
+            });            
         });
-/*
-
-        $("#search-btn").on("click", function () {
-            var searchedCharacter = $("#character-search").val().trim();
-
-            searchedCharacter = searchedCharacter.replace(/\s+/g, "").toLowerCase();
-
-            $.get("/api/" + searchedCharacter, function (data) {
-                console.log(data);
-                if (data) {
-                    $("#stats").show();
-                    $("#name").text(data.name);
-                    $("#role").text(data.role);
-                    $("#age").text(data.age);
-                    $("#force-points").text(data.forcePoints);
-                } else {
-                    $("#name").text(
-                        "The force is not strong with this one. Your character was not found.");
-                    $("#stats").hide();
-                }
-            });
-        });
-*/
     </script>
 </body>
 
